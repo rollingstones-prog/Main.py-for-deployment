@@ -147,6 +147,9 @@ def send_whatsapp_message(to, text):
     except Exception as e:
         print("❌ Error sending message:", e)
 
+print("🔑 WA_TOKEN (first 20 chars):", WA_TOKEN[:20])
+
+
 
 
 # In-memory state
@@ -2351,6 +2354,7 @@ async def _app_shutdown():
 
 # Note: legacy socketserver-based main() removed. Run the app with uvicorn:
 #    .venv\Scripts\python -m uvicorn main:app --host 0.0.0.0 --port 8000
+
 
 
 
