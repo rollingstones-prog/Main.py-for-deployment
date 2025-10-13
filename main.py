@@ -1,4 +1,9 @@
+# =========================
+# 📦 MAIN BACKEND ENTRY POINT
+# =========================
+
 from fastapi import FastAPI, Request, Response, HTTPException
+from fastapi.middleware.cors import CORSMiddleware
 import os
 import json
 import time
@@ -17,11 +22,12 @@ import logging
 import requests
 import mimetypes
 
-# Import local DB helper and ElevenLabs TTS/STT if available
+# -------------------------
+# 🧠 Optional local modules
+# -------------------------
 try:
     from db import init_db, close_engine
 except Exception:
-    # init_db placeholder will be defined later if import fails
     init_db = None
     close_engine = None
 
@@ -31,7 +37,9 @@ except Exception:
     tts_to_mp3 = None
     stt_from_mp3 = None
 
-# PDF text extractor: prefer pdfminer, fall back to PyPDF2 or noop
+# -------------------------
+# 📄 PDF Text Extractor
+# -------------------------
 try:
     from pdfminer.high_level import extract_text as extract_text
 except Exception:
@@ -49,32 +57,57 @@ except Exception:
         def extract_text(path):
             return ""
 
+# -------------------------
+# 🌍 Environment & FastAPI setup
+# -------------------------
 load_dotenv(override=True)
-app = FastAPI()
-# FastAPI app instance
 
-@app.get("/")
-def home():
-    return {"status": "ok", "message": "Backend is live 🚀"}
+app = FastAPI(title="Internal Communication WhatsApp AI", version="1.0.0")
 
+# Allow CORS (needed for frontend + Render + Meta)
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
-# Environment
+# -------------------------
+# 🧾 Environment Variables
+# -------------------------
 WA_TOKEN = os.getenv("WA_TOKEN")
 WA_PHONE_ID = os.getenv("WA_PHONE_ID")
-VERIFY_TOKEN = os.getenv("VERIFY_TOKEN")
+VERIFY_TOKEN = os.getenv("VERIFY_TOKEN", "whatsapp-token")
 BOSS_WA_ID = os.getenv("BOSS_WA_ID")
 
-# Storage paths
+# -------------------------
+# 📁 Local Storage Paths
+# -------------------------
+BASE_DIR = Path(__file__).resolve().parent
 STORAGE_PATHS = {
-    "employees": Path("./employees.json"),
-    "tasks": Path("./tasks.jsonl"),
-    "events": Path("./events.jsonl"),
-    "seen_ids": Path("./seen_ids.json"),
-    "media": Path("./media"),
-    "reports": Path("./reports"),
-    "reports_out": Path("./reports_out"),
-    "voice_arm": Path("./voice_arm.json"),
+    "employees": BASE_DIR / "employees.json",
+    "tasks": BASE_DIR / "tasks.jsonl",
+    "events": BASE_DIR / "events.jsonl",
+    "seen_ids": BASE_DIR / "seen_ids.json",
+    "media": BASE_DIR / "media",
+    "reports": BASE_DIR / "reports",
+    "reports_out": BASE_DIR / "reports_out",
+    "voice_arm": BASE_DIR / "voice_arm.json",
 }
+
+# Ensure required folders exist
+for folder_key in ["media", "reports", "reports_out"]:
+    STORAGE_PATHS[folder_key].mkdir(exist_ok=True)
+
+# -------------------------
+# 🚀 Health Check Route
+# -------------------------
+@app.get("/")
+async def home():
+    """Simple health-check endpoint."""
+    return {"status": "ok", "message": "Backend is live 🚀"}
+
 
 # In-memory state
 SEEN_MESSAGE_IDS = set()
@@ -2278,6 +2311,7 @@ async def _app_shutdown():
 
 # Note: legacy socketserver-based main() removed. Run the app with uvicorn:
 #    .venv\Scripts\python -m uvicorn main:app --host 0.0.0.0 --port 8000
+
 
 
 
