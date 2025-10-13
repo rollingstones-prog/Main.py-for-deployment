@@ -53,6 +53,10 @@ load_dotenv(override=True)
 app = FastAPI()
 # FastAPI app instance
 
+@app.get("/")
+def home():
+    return {"status": "ok", "message": "Backend is live 🚀"}
+
 
 # Environment
 WA_TOKEN = os.getenv("WA_TOKEN")
@@ -2274,6 +2278,7 @@ async def _app_shutdown():
 
 # Note: legacy socketserver-based main() removed. Run the app with uvicorn:
 #    .venv\Scripts\python -m uvicorn main:app --host 0.0.0.0 --port 8000
+
 
 
 
