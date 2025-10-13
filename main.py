@@ -109,6 +109,46 @@ async def home():
     return {"status": "ok", "message": "Backend is live 🚀"}
 
 
+@app.post("/webhook")
+async def receive_message(request: Request):
+    data = await request.json()
+    print("📩 Received:", json.dumps(data, indent=2))
+
+    # ✅ Check if it’s a real message event
+    if "entry" in data:
+        try:
+            message = data["entry"][0]["changes"][0]["value"]["messages"][0]
+            from_number = message["from"]
+            msg_text = message.get("text", {}).get("body", "")
+
+            # 🔹 Auto reply
+            send_whatsapp_message(from_number, f"Auto reply received: {msg_text}")
+
+        except Exception as e:
+            print("⚠️ Error handling message:", e)
+    return {"status": "ok"}
+
+
+def send_whatsapp_message(to, text):
+    url = f"https://graph.facebook.com/v17.0/{WA_PHONE_ID}/messages"
+    headers = {
+        "Authorization": f"Bearer {WA_TOKEN}",
+        "Content-Type": "application/json"
+    }
+    payload = {
+        "messaging_product": "whatsapp",
+        "to": to,
+        "type": "text",
+        "text": {"body": text}
+    }
+    try:
+        r = requests.post(url, headers=headers, json=payload)
+        print("✅ Message sent:", r.text)
+    except Exception as e:
+        print("❌ Error sending message:", e)
+
+
+
 # In-memory state
 SEEN_MESSAGE_IDS = set()
 EMP_PENDING = {}
@@ -2311,6 +2351,7 @@ async def _app_shutdown():
 
 # Note: legacy socketserver-based main() removed. Run the app with uvicorn:
 #    .venv\Scripts\python -m uvicorn main:app --host 0.0.0.0 --port 8000
+
 
 
 
