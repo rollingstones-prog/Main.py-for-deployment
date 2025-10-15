@@ -2,7 +2,7 @@
 # 📦 MAIN BACKEND ENTRY POINT
 # =========================
 
-from fastapi import FastAPI, Request, Response, HTTPException
+from fastapi import  FastAPI, Request, HTTPException, Response
 from fastapi.middleware.cors import CORSMiddleware
 import os
 import json
@@ -189,6 +189,10 @@ def setup_storage():
 
 
 
+@app.head("/webhook")
+async def webhook_head():
+    return Response(status_code=200)
+
 @app.get("/webhook")
 async def webhook_get(request: Request):
     params = request.query_params
@@ -207,40 +211,13 @@ async def webhook_get(request: Request):
 async def webhook_post(request: Request):
     try:
         data = await request.json()
-
-        # 1️⃣ Log raw event
-        append_jsonl(STORAGE_PATHS["events"], {"direction": "in", "payload": data})
-
-        # 2️⃣ Extract messages and process
-        if "entry" in data:
-            for entry in data.get("entry", []):
-                for change in entry.get("changes", []):
-                    value = change.get("value", {})
-                    if "messages" in value:
-                        for message in value["messages"]:
-                            process_message(message)
-
-                            sender = message.get("from")
-                            
-                            if "text" in message:
-                                msg_text = message["text"]["body"]
-                            elif "button" in message:
-                                msg_text = f"[Button] {message['button'].get('text')}"
-                            elif "interactive" in message:
-                                msg_text = "[Interactive reply]"
-                            elif "audio" in message:
-                                msg_text = "[Audio message]"
-                            else:
-                                msg_text = "[Unsupported message type]"
-
-                            update_employee_chat(sender, msg_text)
-
-        return {"ok": True}
-
+        print("📩 Incoming event:", data)
+        return Response(content="EVENT_RECEIVED", media_type="text/plain", status_code=200)
     except Exception as e:
         print("❌ Error in webhook_post:", e)
         raise HTTPException(status_code=500, detail=str(e))
 
+   
 # Runtime state placeholders
 FOLLOWUP_MINUTES = int(os.getenv("FOLLOWUP_MINUTES", "30"))
 FOLLOWUP_TIMERS = {}
@@ -2320,6 +2297,7 @@ async def _app_shutdown():
 
 # Note: legacy socketserver-based main() removed. Run the app with uvicorn:
 #    .venv\Scripts\python -m uvicorn main:app --host 0.0.0.0 --port 8000
+
 
 
 
