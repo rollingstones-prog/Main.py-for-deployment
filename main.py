@@ -189,24 +189,28 @@ def setup_storage():
 
 
 
+
 @app.head("/webhook")
-async def webhook_head():
+async def head_webhook():
+    # Meta sometimes sends HEAD before GET
     return Response(status_code=200)
 
 @app.get("/webhook")
-async def webhook_get(request: Request):
+async def verify_webhook(request: Request):
     params = request.query_params
     mode = params.get("hub.mode")
     token = params.get("hub.verify_token")
     challenge = params.get("hub.challenge")
 
+    print("🔍 VERIFY REQUEST:", dict(params))
+    print("SERVER TOKEN:", VERIFY_TOKEN)
+
     if mode == "subscribe" and token == VERIFY_TOKEN:
-        print("✅ Webhook verified successfully!")
+        print("✅ WEBHOOK VERIFIED SUCCESSFULLY!")
         return Response(content=challenge, media_type="text/plain", status_code=200)
     else:
-        print("❌ Webhook verification failed.")
-        raise HTTPException(status_code=403, detail="Verification failed")
-
+        print("❌ WEBHOOK VERIFICATION FAILED")
+        return Response(content="Verification failed", status_code=403)
 @app.post("/webhook")
 async def webhook_post(request: Request):
     try:
@@ -2297,6 +2301,7 @@ async def _app_shutdown():
 
 # Note: legacy socketserver-based main() removed. Run the app with uvicorn:
 #    .venv\Scripts\python -m uvicorn main:app --host 0.0.0.0 --port 8000
+
 
 
 
