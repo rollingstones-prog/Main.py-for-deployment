@@ -112,8 +112,6 @@ async def home():
 print("🔑 WA_TOKEN (first 20 chars):", WA_TOKEN[:20])
 
 
-
-
 # In-memory state
 SEEN_MESSAGE_IDS = set()
 EMP_PENDING = {}
@@ -2322,6 +2320,7 @@ async def _app_shutdown():
 
 # Note: legacy socketserver-based main() removed. Run the app with uvicorn:
 #    .venv\Scripts\python -m uvicorn main:app --host 0.0.0.0 --port 8000
+
 
 
 
