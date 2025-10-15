@@ -78,7 +78,7 @@ app.add_middleware(
 # -------------------------
 WA_TOKEN = os.getenv("WA_TOKEN")
 WA_PHONE_ID = os.getenv("WA_PHONE_ID")
-VERIFY_TOKEN = os.getenv("VERIFY_TOKEN_") or "abc123"
+VERIFY_TOKEN = os.getenv("VERIFY_TOKEN") or "abc123"
 BOSS_WA_ID = os.getenv("BOSS_WA_ID")
 
 # -------------------------
@@ -2297,6 +2297,7 @@ async def _app_shutdown():
 
 # Note: legacy socketserver-based main() removed. Run the app with uvicorn:
 #    .venv\Scripts\python -m uvicorn main:app --host 0.0.0.0 --port 8000
+
 
 
 
