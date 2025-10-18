@@ -247,41 +247,44 @@ def send_whatsapp_message(to_number: str, message_body: str):
         print(f"❌ Failed to send message: {e}")
 
 # --- Aapka Updated POST Route ---
+
+
 @app.post("/webhook")
 async def webhook_post(request: Request):
     try:
         data = await request.json()
-        print("📩 Incoming event:", data)
-        
-        # 🟢 ASAL MESSAGE PROCESSING LOGIC 🟢
-        
-        # Data structure mein gehraai tak jaana padta hai
-        if 'object' in data and 'entry' in data:
-            for entry in data['entry']:
-                for change in entry.get('changes', []):
-                    if change.get('field') == 'messages':
-                        for message in change.get('value', {}).get('messages', []):
-                            # User ki ID (jispar reply karna hai)
-                            from_id = message.get('from') 
+
+        # 1️⃣ Log raw event
+        append_jsonl(STORAGE_PATHS["events"], {"direction": "in", "payload": data})
+
+        # 2️⃣ Extract messages and process
+        if "entry" in data:
+            for entry in data.get("entry", []):
+                for change in entry.get("changes", []):
+                    value = change.get("value", {})
+                    if "messages" in value:
+                        for message in value["messages"]:
+                            process_message(message)
+
+                            sender = message.get("from")
                             
-                            # User ka message nikaalo
-                            if message.get('type') == 'text':
-                                text = message['text']['body']
-                                
-                                # SIMPLE REPLY LOGIC:
-                                reply_text = f"Aapne kaha: '{text}'. Main aapka bot hoon. Abhi puri tarah se nahi bana hoon!"
-                                
-                                # Reply Bhejna
-                                if from_id:
-                                    send_whatsapp_message(from_id, reply_text)
-                                    
-        # 🟢 End of Logic 🟢
-        
-        return Response(content="EVENT_RECEIVED", media_type="text/plain", status_code=200)
-    
+                            if "text" in message:
+                                msg_text = message["text"]["body"]
+                            elif "button" in message:
+                                msg_text = f"[Button] {message['button'].get('text')}"
+                            elif "interactive" in message:
+                                msg_text = "[Interactive reply]"
+                            elif "audio" in message:
+                                msg_text = "[Audio message]"
+                            else:
+                                msg_text = "[Unsupported message type]"
+
+                            update_employee_chat(sender, msg_text)
+
+        return {"ok": True}
+
     except Exception as e:
         print("❌ Error in webhook_post:", e)
-        # HTTP 500 error return karna Meta ko behtar lagta hai agar processing fail ho
         raise HTTPException(status_code=500, detail=str(e))
    
 # Runtime state placeholders
@@ -2363,6 +2366,7 @@ async def _app_shutdown():
 
 # Note: legacy socketserver-based main() removed. Run the app with uvicorn:
 #    .venv\Scripts\python -m uvicorn main:app --host 0.0.0.0 --port 8000
+
 
 
 
