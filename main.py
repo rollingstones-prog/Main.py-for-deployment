@@ -198,53 +198,24 @@ async def head_webhook():
     return Response(status_code=200)
 
 @app.get("/webhook")
-async def verify_webhook(request: Request):
+async def webhook_get(request: Request):
     params = request.query_params
     mode = params.get("hub.mode")
     token = params.get("hub.verify_token")
     challenge = params.get("hub.challenge")
 
-    # Logs mein print karwa dein, yeh achhi baat hai
-    print("🔍 VERIFY REQUEST:", dict(params))
-    print("SERVER TOKEN:", VERIFY_TOKEN) 
-
-    # 🟢 ASAL VERIFICATION LOGIC YAHAN HAI 🟢
-    if mode and token:
-        if mode == "subscribe" and token == VERIFY_TOKEN:
-            # Sahi token, sahi mode. Challenge ko wapas bhejein.
-            print("✅ WEBHOOK VERIFICATION SUCCESSFUL")
-            # Challenge ko as a plain text response 200 OK ke saath wapas karna hai
-            return Response(content=challenge, status_code=200, media_type="text/plain")
-        else:
-            # Token match nahi kiya ya mode ghalat hai
-            print("❌ WEBHOOK VERIFICATION FAILED: Token mismatch or invalid mode")
-            return Response(content="Forbidden", status_code=403)
-    
-    # Agar zaroori parameters hi missing hon
-    return Response(content="Bad Request", status_code=400)
-  
-# --- Message Bhejnewala Helper Function ---
-def send_whatsapp_message(to_number: str, message_body: str):
-    """WhatsApp Cloud API ke zariye text message bhejta hai."""
-    
-    url = f"https://graph.facebook.com/v19.0/{PHONE_NUMBER_ID}/messages"
-    headers = {
-        "Authorization": f"Bearer {WA_TOKEN}",
-        "Content-Type": "application/json",
-    }
-    payload = {
-        "messaging_product": "whatsapp",
-        "to": to_number,
-        "type": "text",
-        "text": {"body": message_body},
-    }
-    
-    try:
-        response = requests.post(url, headers=headers, json=payload)
-        response.raise_for_status() # Agar koi error ho toh exception throw kare
-        print("🚀 Message sent successfully.")
-    except requests.exceptions.RequestException as e:
-        print(f"❌ Failed to send message: {e}")
+    if mode == "subscribe" and token == VERIFY_TOKEN:
+        print("✅ Webhook verified successfully!")
+        return Response(content=challenge, media_type="text/plain", status_code=200)
+    else:
+        print("❌ Webhook verification failed.")
+        raise HTTPException(status_code=403, detail="Verification failed")@app.get("/webhook")
+async def webhook_get(request: Request):
+    # Return the challenge value for webhook verification
+    q = request.query_params
+    if ('hub.mode' in q and 'hub.verify_token' in q and q.get('hub.mode') == 'subscribe' and q.get('hub.verify_token') == VERIFY_TOKEN):
+        return Response(content=q.get('hub.challenge', ''), media_type="text/plain")
+    raise HTTPException(status_code=403)
 
 # --- Aapka Updated POST Route ---
 
@@ -2366,6 +2337,7 @@ async def _app_shutdown():
 
 # Note: legacy socketserver-based main() removed. Run the app with uvicorn:
 #    .venv\Scripts\python -m uvicorn main:app --host 0.0.0.0 --port 8000
+
 
 
 
