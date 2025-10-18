@@ -202,15 +202,24 @@ async def verify_webhook(request: Request):
     token = params.get("hub.verify_token")
     challenge = params.get("hub.challenge")
 
+    # Logs mein print karwa dein, yeh achhi baat hai
     print("🔍 VERIFY REQUEST:", dict(params))
-    print("SERVER TOKEN:", VERIFY_TOKEN)
+    print("SERVER TOKEN:", VERIFY_TOKEN) 
 
-    if mode == "subscribe" and token == VERIFY_TOKEN:
-        print("✅ WEBHOOK VERIFIED SUCCESSFULLY!")
-        return Response(content=challenge, media_type="text/plain", status_code=200)
-    else:
-        print("❌ WEBHOOK VERIFICATION FAILED")
-        return Response(content="Verification failed", status_code=403)
+    # 🟢 ASAL VERIFICATION LOGIC YAHAN HAI 🟢
+    if mode and token:
+        if mode == "subscribe" and token == VERIFY_TOKEN:
+            # Sahi token, sahi mode. Challenge ko wapas bhejein.
+            print("✅ WEBHOOK VERIFICATION SUCCESSFUL")
+            # Challenge ko as a plain text response 200 OK ke saath wapas karna hai
+            return Response(content=challenge, status_code=200, media_type="text/plain")
+        else:
+            # Token match nahi kiya ya mode ghalat hai
+            print("❌ WEBHOOK VERIFICATION FAILED: Token mismatch or invalid mode")
+            return Response(content="Forbidden", status_code=403)
+    
+    # Agar zaroori parameters hi missing hon
+    return Response(content="Bad Request", status_code=400)
 @app.post("/webhook")
 async def webhook_post(request: Request):
     try:
@@ -2301,6 +2310,7 @@ async def _app_shutdown():
 
 # Note: legacy socketserver-based main() removed. Run the app with uvicorn:
 #    .venv\Scripts\python -m uvicorn main:app --host 0.0.0.0 --port 8000
+
 
 
 
