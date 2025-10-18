@@ -6,6 +6,7 @@ from fastapi import  FastAPI, Request, HTTPException, Response
 from fastapi.middleware.cors import CORSMiddleware
 import os
 import json
+from starlette.responses import JSONResponse
 import time
 import warnings
 from pathlib import Path
@@ -80,6 +81,7 @@ WA_TOKEN = os.getenv("WA_TOKEN")
 WA_PHONE_ID = os.getenv("WA_PHONE_ID")
 VERIFY_TOKEN = os.getenv("VERIFY_TOKEN") or "abc123"
 BOSS_WA_ID = os.getenv("BOSS_WA_ID")
+PHONE_NUMBER_ID = os.environ.get("PHONE_NUMBER_ID") 
 
 # -------------------------
 # 📁 Local Storage Paths
@@ -220,15 +222,7 @@ async def verify_webhook(request: Request):
     
     # Agar zaroori parameters hi missing hon
     return Response(content="Bad Request", status_code=400)
-import os
-import requests
-from fastapi import Request, Response, FastAPI
-from starlette.responses import JSONResponse
-
-# ⚠️ YEH CHEEZEIN Environment Variables SE LENI ZAROORI HAIN!
-WHATSAPP_TOKEN = os.environ.get("WHATSAPP_ACCESS_TOKEN") # Aapka Meta Access Token
-PHONE_NUMBER_ID = os.environ.get("PHONE_NUMBER_ID")      # Aapki WhatsApp Phone Number ID
-
+  
 # --- Message Bhejnewala Helper Function ---
 def send_whatsapp_message(to_number: str, message_body: str):
     """WhatsApp Cloud API ke zariye text message bhejta hai."""
@@ -2369,6 +2363,7 @@ async def _app_shutdown():
 
 # Note: legacy socketserver-based main() removed. Run the app with uvicorn:
 #    .venv\Scripts\python -m uvicorn main:app --host 0.0.0.0 --port 8000
+
 
 
 
