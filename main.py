@@ -220,16 +220,75 @@ async def verify_webhook(request: Request):
     
     # Agar zaroori parameters hi missing hon
     return Response(content="Bad Request", status_code=400)
+import os
+import requests
+from fastapi import Request, Response, FastAPI
+from starlette.responses import JSONResponse
+
+# ⚠️ YEH CHEEZEIN Environment Variables SE LENI ZAROORI HAIN!
+WHATSAPP_TOKEN = os.environ.get("WHATSAPP_ACCESS_TOKEN") # Aapka Meta Access Token
+PHONE_NUMBER_ID = os.environ.get("PHONE_NUMBER_ID")      # Aapki WhatsApp Phone Number ID
+
+# --- Message Bhejnewala Helper Function ---
+def send_whatsapp_message(to_number: str, message_body: str):
+    """WhatsApp Cloud API ke zariye text message bhejta hai."""
+    
+    url = f"https://graph.facebook.com/v19.0/{PHONE_NUMBER_ID}/messages"
+    headers = {
+        "Authorization": f"Bearer {WHATSAPP_TOKEN}",
+        "Content-Type": "application/json",
+    }
+    payload = {
+        "messaging_product": "whatsapp",
+        "to": to_number,
+        "type": "text",
+        "text": {"body": message_body},
+    }
+    
+    try:
+        response = requests.post(url, headers=headers, json=payload)
+        response.raise_for_status() # Agar koi error ho toh exception throw kare
+        print("🚀 Message sent successfully.")
+    except requests.exceptions.RequestException as e:
+        print(f"❌ Failed to send message: {e}")
+
+# --- Aapka Updated POST Route ---
 @app.post("/webhook")
 async def webhook_post(request: Request):
     try:
         data = await request.json()
         print("📩 Incoming event:", data)
+        
+        # 🟢 ASAL MESSAGE PROCESSING LOGIC 🟢
+        
+        # Data structure mein gehraai tak jaana padta hai
+        if 'object' in data and 'entry' in data:
+            for entry in data['entry']:
+                for change in entry.get('changes', []):
+                    if change.get('field') == 'messages':
+                        for message in change.get('value', {}).get('messages', []):
+                            # User ki ID (jispar reply karna hai)
+                            from_id = message.get('from') 
+                            
+                            # User ka message nikaalo
+                            if message.get('type') == 'text':
+                                text = message['text']['body']
+                                
+                                # SIMPLE REPLY LOGIC:
+                                reply_text = f"Aapne kaha: '{text}'. Main aapka bot hoon. Abhi puri tarah se nahi bana hoon!"
+                                
+                                # Reply Bhejna
+                                if from_id:
+                                    send_whatsapp_message(from_id, reply_text)
+                                    
+        # 🟢 End of Logic 🟢
+        
         return Response(content="EVENT_RECEIVED", media_type="text/plain", status_code=200)
+    
     except Exception as e:
         print("❌ Error in webhook_post:", e)
+        # HTTP 500 error return karna Meta ko behtar lagta hai agar processing fail ho
         raise HTTPException(status_code=500, detail=str(e))
-
    
 # Runtime state placeholders
 FOLLOWUP_MINUTES = int(os.getenv("FOLLOWUP_MINUTES", "30"))
@@ -2310,6 +2369,7 @@ async def _app_shutdown():
 
 # Note: legacy socketserver-based main() removed. Run the app with uvicorn:
 #    .venv\Scripts\python -m uvicorn main:app --host 0.0.0.0 --port 8000
+
 
 
 
