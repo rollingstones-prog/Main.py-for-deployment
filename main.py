@@ -229,7 +229,7 @@ def send_whatsapp_message(to_number: str, message_body: str):
     
     url = f"https://graph.facebook.com/v19.0/{PHONE_NUMBER_ID}/messages"
     headers = {
-        "Authorization": f"Bearer {WHATSAPP_TOKEN}",
+        "Authorization": f"Bearer {WA_TOKEN}",
         "Content-Type": "application/json",
     }
     payload = {
@@ -2363,6 +2363,7 @@ async def _app_shutdown():
 
 # Note: legacy socketserver-based main() removed. Run the app with uvicorn:
 #    .venv\Scripts\python -m uvicorn main:app --host 0.0.0.0 --port 8000
+
 
 
 
